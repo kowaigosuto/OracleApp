@@ -1,237 +1,261 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Quantum Oracle</title>
-    
-    <!-- Telegram WebApp Script -->
+    <!-- Подключаем Телеграм Скрипт -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Fonts -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Inter:wght@300;400;600&display=swap');
+        /* Шрифты */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap');
 
+        /* Переменные цветов */
         :root {
-            --color-bg: #050014;
-            --color-gold: #FFD700;
-            --color-neon-purple: #B026FF;
-            --color-error: #FF3333;
+            --bg: #050014;
+            --gold: #FFD700;
+            --purple: #B026FF;
         }
 
+        /* Сброс стилей */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--color-bg);
+            margin: 0; padding: 0;
+            background-color: var(--bg);
             color: white;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Inter', sans-serif;
+            height: 100vh; width: 100vw;
+            overflow: hidden; /* Чтобы не скроллилось лишнее */
+            display: flex; flex-direction: column;
         }
 
-        h1, h2, h3, .font-oracle { font-family: 'Cinzel', serif; }
+        /* Звездный фон */
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%); }
+        .star { position: absolute; background: white; border-radius: 50%; animation: blink 3s infinite; }
+        @keyframes blink { 0%,100%{opacity:0;} 50%{opacity:1;} }
 
-        /* --- Background Particles --- */
-        .stars {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: -1;
-            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
-            overflow: hidden;
-        }
-        .star {
-            position: absolute; background: white; border-radius: 50%;
-            opacity: 0; animation: float-sparkle 4s infinite ease-in-out;
-        }
-        @keyframes float-sparkle {
-            0% { transform: translateY(0) scale(0); opacity: 0; }
-            50% { opacity: 0.8; }
-            100% { transform: translateY(-100px) scale(1); opacity: 0; }
-        }
-
-        /* --- Effects --- */
-        .glow-text-gold { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-        .glow-box-purple { box-shadow: 0 0 15px rgba(176, 38, 255, 0.2); border: 1px solid rgba(176, 38, 255, 0.3); }
-        .glow-box-gold { box-shadow: 0 0 15px rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.4); }
-        .btn-pulse { animation: pulse-gold 2s infinite; }
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
-        }
-        .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .blur-content { filter: blur(6px); user-select: none; pointer-events: none; }
+        /* Утилиты */
         .hidden { display: none !important; }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        h1, h2, h3, .font-oracle { font-family: 'Cinzel', serif; }
+        
+        /* СЦЕНЫ */
+        .scene { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 20px; }
+
+        /* ВВОД ДАТЫ */
+        input[type="date"] {
+            background: #111; border: 1px solid #444; color: white;
+            padding: 15px; font-size: 18px; border-radius: 10px; width: 100%; max-width: 280px;
+            text-align: center; font-family: 'Inter', sans-serif; text-transform: uppercase;
+            margin-bottom: 20px; outline: none;
+        }
+        
+        /* КНОПКА СТАРТ */
+        .btn-start {
+            background: linear-gradient(90deg, #B026FF, #7c1dba); color: white;
+            padding: 15px 40px; border-radius: 10px; border: none; font-size: 16px;
+            text-transform: uppercase; font-weight: bold; opacity: 0.5; pointer-events: none;
+            transition: 0.3s;
+        }
+        .btn-start.active { opacity: 1; pointer-events: all; box-shadow: 0 0 15px var(--purple); }
+
+        /* ЗАГРУЗКА */
+        .loader {
+            width: 80px; height: 80px; border: 3px solid rgba(255,215,0,0.3);
+            border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* РЕЗУЛЬТАТ */
+        #scene-result { justify-content: flex-start; overflow-y: auto; padding-bottom: 120px; } /* Отступ снизу для кнопки */
+        
+        .card {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 15px; width: 100%; margin-bottom: 10px; text-align: center;
+        }
+        .text-gold { color: var(--gold); }
+        .big-num { font-size: 28px; font-weight: bold; font-family: 'Cinzel', serif; }
+
+        /* БЛОК ОШИБКИ */
+        .error-box {
+            border: 1px solid #FF3333; background: rgba(255, 51, 51, 0.1);
+            padding: 15px; border-radius: 12px; width: 100%; margin-top: 10px; text-align: center;
+        }
+        .blur { filter: blur(5px); user-select: none; }
+
+        /* ========================================= */
+        /* ФИКС ДЛЯ АЙФОНА (САМОЕ ВАЖНОЕ)            */
+        /* ========================================= */
+        .fixed-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            /* Учитываем безопасную зону Айфона + отступ */
+            padding: 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            
+            /* Градиент, чтобы кнопка не висела в воздухе */
+            background: linear-gradient(to top, #050014 90%, transparent);
+            
+            /* Поднимаем над всем остальным */
+            z-index: 9999; 
+        }
+
+        .btn-buy {
+            width: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFC000);
+            color: black;
+            font-size: 18px;
+            font-weight: 900;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            /* Чтобы нажималось мгновенно */
+            touch-action: manipulation; 
+        }
+        
+        /* Анимация пульсации */
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%{transform:scale(1);} 50%{transform:scale(1.02);} 100%{transform:scale(1);} }
+
     </style>
 </head>
 <body>
 
-    <!-- Background -->
-    <div class="stars" id="star-container"></div>
+    <div class="stars" id="stars"></div>
 
-    <!-- Main App -->
-    <main class="relative w-full h-full flex flex-col z-10">
+    <!-- СЦЕНА 1: ВВОД -->
+    <div id="scene-input" class="scene">
+        <h1 class="text-gold" style="font-size: 32px; text-align: center; margin-bottom: 5px;">QUANTUM<br>ORACLE</h1>
+        <p style="color: #b026ff; font-size: 12px; text-transform: uppercase; margin-bottom: 40px;">Система доступа</p>
         
-        <!-- === SCENE 1: INPUT === -->
-        <div id="scene-input" class="flex-1 flex flex-col items-center justify-center px-6 space-y-12 animate-fade-in">
-            <div class="text-center space-y-4">
-                <h1 class="text-4xl font-bold tracking-widest text-[#FFD700] glow-text-gold">QUANTUM<br>ORACLE</h1>
-                <p class="text-purple-300 text-sm tracking-widest font-light uppercase opacity-80">Система доступа к Хроникам</p>
-            </div>
+        <input type="date" id="date-input">
+        <button id="btn-start" class="btn-start">НАЧАТЬ СКАН</button>
+    </div>
 
-            <div class="w-full max-w-xs space-y-8">
-                <div class="space-y-2">
-                    <label class="block text-center text-xs text-gold-dim uppercase tracking-[0.2em] mb-2 font-oracle text-[#C5A000]">Введите дату рождения</label>
-                    <input type="date" id="date-input" class="relative w-full bg-[#0a0510] border border-white/10 text-white text-center text-xl p-4 rounded-lg focus:outline-none focus:border-[#FFD700] transition-colors font-mono uppercase">
-                </div>
-                <button id="btn-start" disabled class="w-full bg-gradient-to-r from-[#B026FF] to-[#7c1dba] text-white font-oracle font-bold text-lg py-4 rounded-lg tracking-widest uppercase opacity-50 transition-all duration-300 transform scale-95">Начать скан</button>
-            </div>
-        </div>
+    <!-- СЦЕНА 2: ЗАГРУЗКА -->
+    <div id="scene-process" class="scene hidden">
+        <div class="loader"></div>
+        <p id="process-text" style="color: #00ff9d; font-family: monospace; margin-top: 20px;">Подключение...</p>
+    </div>
 
-        <!-- === SCENE 2: PROCESSING === -->
-        <div id="scene-process" class="hidden flex-1 flex-col items-center justify-center px-8 space-y-8">
-            <div class="relative w-48 h-48 flex items-center justify-center">
-                <div class="absolute inset-0 border-2 border-purple-900/50 rounded-full"></div>
-                <div class="absolute inset-2 border-2 border-t-[#FFD700] border-r-transparent border-b-purple-500 border-l-transparent rounded-full animate-spin"></div>
-                <span class="text-2xl font-oracle animate-pulse">👁</span>
+    <!-- СЦЕНА 3: РЕЗУЛЬТАТ -->
+    <div id="scene-result" class="scene hidden">
+        <h2 class="text-gold">АНАЛИЗ ЗАВЕРШЕН</h2>
+        
+        <div style="display: flex; gap: 10px; width: 100%; margin-top: 20px;">
+            <div class="card" style="border-color: #FFD700;">
+                <div style="font-size: 10px; color: #FFD700;">ЧИСЛО ПУТИ</div>
+                <div id="res-path" class="big-num text-gold">0</div>
             </div>
-            <div class="text-center w-full">
-                <p id="process-text" class="font-mono text-[#00ff9d] text-sm tracking-wide h-6">Инициализация...</p>
-                <div class="w-full bg-gray-900 h-1 mt-4 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-[#FFD700] w-0 transition-all duration-100 ease-out"></div>
-                </div>
+            <div class="card" style="border-color: #B026FF;">
+                <div style="font-size: 10px; color: #B026FF;">СТИХИЯ</div>
+                <div id="res-elem" class="big-num" style="color: white; font-size: 20px;">Эфир</div>
             </div>
         </div>
 
-        <!-- === SCENE 3: RESULT === -->
-        <div id="scene-result" class="hidden flex-1 flex-col h-full overflow-y-auto overflow-x-hidden animate-fade-in relative">
-            <div class="px-6 py-8 pb-32 space-y-6">
-                <div class="text-center">
-                    <h2 class="text-2xl font-oracle text-[#FFD700] mb-1">Анализ Завершен</h2>
-                </div>
+        <div class="card" style="margin-top: 10px; position: relative; overflow: hidden;">
+            <div style="position: absolute; right: 10px; top: 10px; font-size: 40px; opacity: 0.1;">🎴</div>
+            <div style="font-size: 10px; opacity: 0.7;">ВАШ АРКАН</div>
+            <div id="res-arcana" class="big-num text-white" style="font-size: 22px;">Шут</div>
+            <p style="font-size: 11px; opacity: 0.7; margin-top: 5px;">Символ свободы и начала пути.</p>
+        </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-1 bg-white/5 backdrop-blur-md border border-[#FFD700]/30 rounded-xl p-4 flex flex-col items-center justify-center space-y-2 glow-box-gold">
-                        <span class="text-[10px] text-[#FFD700] uppercase tracking-widest">Число Пути</span>
-                        <span id="res-path" class="text-4xl font-oracle font-bold text-white">0</span>
-                    </div>
-                    <div class="col-span-1 bg-white/5 backdrop-blur-md border border-purple-500/30 rounded-xl p-4 flex flex-col items-center justify-center space-y-2 glow-box-purple">
-                        <span class="text-[10px] text-purple-300 uppercase tracking-widest">Стихия</span>
-                        <span id="res-element" class="text-xl font-oracle font-bold text-white">Эфир</span>
-                    </div>
-                </div>
-
-                <div class="w-full bg-gradient-to-b from-[#1a0b2e] to-black border border-white/10 rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-20 text-6xl font-oracle select-none">🎴</div>
-                    <span class="text-[10px] text-gray-400 uppercase tracking-widest block mb-2">Ваш Аркан Таро</span>
-                    <h3 id="res-arcana" class="text-2xl font-oracle text-white mb-1">Шут</h3>
-                    <p id="res-arcana-desc" class="text-xs text-purple-200/80 leading-relaxed">Символ новых начинаний, свободы и чистого потенциала.</p>
-                </div>
-
-                <!-- PAYWALL BLOCK -->
-                <div class="mt-8 border-2 border-[#FF3333] bg-[#FF3333]/10 rounded-xl p-5 relative overflow-hidden animate-pulse">
-                    <h3 class="font-bold text-sm tracking-wider uppercase font-oracle text-[#FF3333] mb-1">Критическая Ошибка</h3>
-                    <p class="text-xs text-red-200 font-bold mb-1 uppercase tracking-widest">Финансовый канал перекрыт</p>
-                    <div class="relative mt-3">
-                        <p class="text-sm text-gray-400 blur-content leading-relaxed">
-                            Согласно анализу вашей кармической структуры...
-                        </p>
-                        <div class="absolute inset-0 flex items-center justify-center"><span class="text-2xl">🔒</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sticky Button (ИСПРАВЛЕННАЯ ВЕРСИЯ) -->
-            <div class="fixed bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black via-black to-transparent z-50">
-                <button 
-                    onclick="window.Telegram.WebApp.sendData(JSON.stringify({action: 'buy'}))"
-                    class="w-full bg-gradient-to-r from-[#FFD700] via-[#FFEd4B] to-[#FFD700] text-black font-oracle font-black text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(255,215,0,0.4)] btn-pulse uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-transform"
-                >
-                    <span>Снять блокировку</span>
-                    <span class="bg-black/20 px-2 py-0.5 rounded text-xs font-bold">250 ⭐️</span>
-                </button>
+        <div class="error-box">
+            <div style="color: #FF3333; font-weight: bold; font-size: 14px;">⚠️ ОШИБКА ДОСТУПА</div>
+            <div style="color: #ffcccc; font-size: 10px; margin-bottom: 10px;">ФИНАНСОВЫЙ КАНАЛ ПЕРЕКРЫТ</div>
+            <div style="position: relative;">
+                <p class="blur">Текст кармической диагностики скрыт из-за блокировки канала...</p>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 24px;">🔒</div>
             </div>
         </div>
-    </main>
 
-    <!-- Logic -->
+        <!-- КНОПКА (С ФИКСОМ ДЛЯ АЙФОНА) -->
+        <div class="fixed-bottom">
+            <button onclick="buyAccess()" class="btn-buy pulse">
+                СНЯТЬ БЛОК (250 ⭐️)
+            </button>
+        </div>
+    </div>
+
     <script>
-        // Init Telegram
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        // Красим шапку Телеграма в черный, чтобы сливалось
         tg.setHeaderColor('#050014');
         tg.setBackgroundColor('#050014');
 
-        // Stars
-        const container = document.getElementById('star-container');
-        for(let i=0; i<50; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-            const size = Math.random() * 3 + 1;
-            star.style.width = `${size}px`;
-            star.style.height = `${size}px`;
-            star.style.left = `${Math.random() * 100}%`;
-            star.style.top = `${Math.random() * 100}%`;
-            star.style.animationDuration = `${Math.random() * 3 + 2}s`;
-            star.style.animationDelay = `${Math.random() * 5}s`;
-            container.appendChild(star);
+        // Функция покупки (вызывается из HTML)
+        function buyAccess() {
+            // Вибрация при нажатии (приятно на телефоне)
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            
+            // Отправка данных
+            tg.sendData(JSON.stringify({action: 'buy'}));
+            
+            // На всякий случай закрываем, хотя sendData и так закроет
+            setTimeout(() => tg.close(), 100); 
         }
 
-        // Logic
+        // Логика интерфейса
         const dateInput = document.getElementById('date-input');
         const btnStart = document.getElementById('btn-start');
-        
+
         dateInput.addEventListener('change', (e) => {
-            if(e.target.value) {
-                btnStart.disabled = false;
-                btnStart.classList.remove('opacity-50', 'scale-95');
-                btnStart.classList.add('opacity-100', 'scale-100', 'btn-pulse');
-            }
+            if(e.target.value) btnStart.classList.add('active');
         });
 
         btnStart.addEventListener('click', () => {
             if(!dateInput.value) return;
+
+            // Фейковая нумерология
+            let val = dateInput.value;
+            let sum = val.replace(/-/g,'').split('').reduce((a,b)=>+a + +b, 0);
+            while(sum>9) sum = sum.toString().split('').reduce((a,b)=>+a + +b, 0);
             
-            // Fake Calc
-            const dateVal = dateInput.value;
-            let sum = dateVal.replace(/-/g, '').split('').map(Number).reduce((a,b)=>a+b,0);
-            while(sum > 9) sum = sum.toString().split('').map(Number).reduce((a,b)=>a+b,0);
-            
-            const day = parseInt(dateVal.split('-')[2]);
-            const arcana = day > 22 ? day - 22 : day;
-            const month = parseInt(dateVal.split('-')[1]);
+            const day = parseInt(val.split('-')[2]);
+            const month = parseInt(val.split('-')[1]);
             const elems = ["Вода", "Земля", "Огонь", "Воздух"];
-            const elem = elems[Math.floor((month % 12) / 3)];
 
             document.getElementById('res-path').innerText = sum;
-            document.getElementById('res-element').innerText = elem;
-            document.getElementById('res-arcana').innerText = arcana;
+            document.getElementById('res-elem').innerText = elems[Math.floor((month%12)/3)];
+            document.getElementById('res-arcana').innerText = (day > 22 ? day - 22 : day);
 
-            // Animations
+            // Анимация перехода
             document.getElementById('scene-input').classList.add('hidden');
             document.getElementById('scene-process').classList.remove('hidden');
-            document.getElementById('scene-process').style.display = 'flex';
 
-            let width = 0;
-            const interval = setInterval(() => {
-                width += 1;
-                document.getElementById('progress-bar').style.width = width + '%';
-                if(width >= 100) {
-                    clearInterval(interval);
-                    document.getElementById('scene-process').classList.add('hidden');
-                    document.getElementById('scene-result').classList.remove('hidden');
-                    document.getElementById('scene-result').style.display = 'flex';
-                }
-            }, 35);
+            // Имитация загрузки
+            let w = 0;
+            const texts = ["Связь с сервером...", "Чтение ДНК...", "Анализ кармы...", "ОШИБКА..."];
+            let tStep = 0;
+            
+            setInterval(() => {
+                if(tStep < texts.length) document.getElementById('process-text').innerText = texts[tStep++];
+            }, 800);
+
+            setTimeout(() => {
+                document.getElementById('scene-process').classList.add('hidden');
+                document.getElementById('scene-result').classList.remove('hidden');
+            }, 3500);
         });
+
+        // Звезды
+        const starCont = document.getElementById('stars');
+        for(let i=0; i<30; i++) {
+            let s = document.createElement('div'); s.className='star';
+            s.style.left = Math.random()*100+'%'; s.style.top = Math.random()*100+'%';
+            s.style.width = Math.random()*3+'px'; s.style.height = s.style.width;
+            s.style.animationDelay = Math.random()*2+'s';
+            starCont.appendChild(s);
+        }
     </script>
 </body>
 </html>
